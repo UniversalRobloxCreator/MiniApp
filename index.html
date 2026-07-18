@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>UniversalRoblox Key</title>
-    <!-- Подключаем вофициальный скрипт Telegram WebApp -->
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -131,34 +131,20 @@
             color: #888;
         }
 
-        /* Стили для кнопок */
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .btn-group .btn {
-            flex: 1;
-        }
-
-        .btn {
+        /* Subscribe Button (Red Accent) */
+        .btn-primary {
+            width: 100%;
             padding: 14px;
+            background: #da2f2f;
+            color: #fff;
             border: none;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .btn-primary {
-            background: #da2f2f;
-            color: #fff;
+            margin-bottom: 10px;
+            display: none;
         }
 
         .btn-primary:hover {
@@ -166,10 +152,46 @@
             box-shadow: 0 0 20px rgba(218, 47, 47, 0.2);
         }
 
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        /* Check Subscription Button (Dark Accent) */
+        .btn-check {
+            width: 100%;
+            padding: 14px;
+            background: #1e1e1e;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .btn-check:hover {
+            background: #282828;
+            border-color: #444;
+        }
+
+        .btn-check:active {
+            transform: scale(0.97);
+        }
+
         .btn-secondary {
+            width: 100%;
+            padding: 14px;
             background: transparent;
             color: #666;
             border: 1px solid #1e1e1e;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .btn-secondary:hover:not(:disabled) {
@@ -178,37 +200,14 @@
             color: #aaa;
         }
 
+        .btn-secondary:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
         .btn-secondary:disabled {
             opacity: 0.3;
             cursor: not-allowed;
             transform: none !important;
-        }
-
-        .btn-check {
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #3a3a3a;
-        }
-
-        .btn-check:hover:not(:disabled) {
-            background: #3a3a3a;
-            border-color: #4a4a4a;
-        }
-
-        .btn-check:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .btn-success {
-            background: #4caf50;
-            color: #fff;
-        }
-
-        .btn-success:hover {
-            background: #43a047;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
         }
 
         .message {
@@ -254,9 +253,6 @@
                 font-size: 26px;
                 letter-spacing: 4px;
             }
-            .btn-group {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
@@ -269,19 +265,15 @@
 
         <div class="key-box" id="keyBox">
             <div class="key-label">Your Key</div>
-            <div class="key-text placeholder" id="keyText">⏳ Проверка подписки...</div>
+            <div class="key-text placeholder" id="keyText">⏳ Loading...</div>
             <div class="copy-hint">Click to copy</div>
         </div>
 
-        <!-- Группа кнопок -->
-        <div class="btn-group">
-            <!-- Кнопка проверки подписки -->
-            <button class="btn btn-check" id="checkSubBtn">🔍 Проверить подписку</button>
-            <!-- Кнопка подписки (показывается, если пользователь не подписан) -->
-            <button class="btn btn-primary" id="subBtn" style="display: none;">📢 Подписаться</button>
-        </div>
+        <!-- Buttons for Channel Subscription and Manual Check -->
+        <button class="btn-primary" id="subBtn">📢 Join Channel</button>
+        <button class="btn-check" id="checkBtn">🔄 Check Subscription</button>
 
-        <button class="btn btn-secondary" id="copyBtn" disabled>📋 Copy Key</button>
+        <button class="btn-secondary" id="copyBtn" disabled>📋 Copy Key</button>
 
         <div class="message" id="message"></div>
 
@@ -300,7 +292,7 @@
             const keyBox = document.getElementById('keyBox');
             const copyBtn = document.getElementById('copyBtn');
             const subBtn = document.getElementById('subBtn');
-            const checkSubBtn = document.getElementById('checkSubBtn');
+            const checkBtn = document.getElementById('checkBtn');
             const messageEl = document.getElementById('message');
             const brandLink = document.getElementById('brandLink');
 
@@ -311,7 +303,7 @@
             const CHAT_ID = '@UniversalRoblox'; 
             const BOT_TOKEN = '6068348600:AAEn16T6yZKPizHIOoQo9_QDLhk6r0qf-YM';
 
-            // ===== НАБОРЫ СИМВОЛОВ ДЛЯ КАЖДОГО ДНЯ НЕДЕЛИ =====
+            // ===== DAILY CHARACTER SETS =====
             const DailyCharSets = {
                 1: ['1','4','6','8','d','b','x','a','o','g'],
                 2: ['2','5','6','0','o','j','t','b','d','p'],
@@ -327,14 +319,12 @@
             let syncComplete = false;
             let currentKey = '';
             let isSubscribed = false;
-            let userId = null;
-            let isChecking = false;
 
             // ===== TELEGRAM API =====
             const tg = window.Telegram?.WebApp;
             if (tg) tg.expand();
 
-            // Функция проверки подписки
+            // Check Telegram Subscription via Bot API
             async function checkTelegramSubscription(userId) {
                 if (!userId) return false;
                 try {
@@ -368,6 +358,7 @@
                 }
             }
 
+            // Translated Russian status strings inside setKeyDisplay calls
             function setKeyDisplay(active, text, isPlaceholder = false) {
                 if (active) {
                     keyBox.classList.add('active');
@@ -380,7 +371,6 @@
 
             function setButtonsEnabled(enabled) {
                 copyBtn.disabled = !enabled || !syncComplete || !currentKey || !isSubscribed;
-                checkSubBtn.disabled = isChecking;
             }
 
             // ===== FETCH INTERNET TIME =====
@@ -424,7 +414,7 @@
 
             // ===== SYNC TIME =====
             async function syncTime() {
-                setKeyDisplay(false, '⏳ Синхронизация времени...', true);
+                setKeyDisplay(false, '⏳ Loading...', true);
                 setButtonsEnabled(false);
 
                 const mskTimestamp = await fetchInternetTime();
@@ -437,8 +427,8 @@
 
                 syncComplete = false;
                 internetTimestamp = null;
-                setKeyDisplay(false, '❌ Ошибка синхронизации', true);
-                showMessage('❌ Не удалось синхронизировать время', 'error');
+                setKeyDisplay(false, '❌ Connection failed', true);
+                showMessage('❌ Failed to sync time', 'error');
                 return false;
             }
 
@@ -459,20 +449,20 @@
             // ===== GENERATE KEY =====
             function generateKey() {
                 if (!syncComplete || !internetTimestamp) {
-                    showMessage('⏳ Подождите синхронизации...', 'warning');
+                    showMessage('⏳ Please wait for sync...', 'warning');
                     return null;
                 }
 
                 if (!isSubscribed) {
-                    setKeyDisplay(false, '🔒 Доступ ограничен', true);
-                    showMessage('❌ Для получения ключа подпишитесь на канал.', 'error');
+                    setKeyDisplay(false, '🔒 Access Denied', true);
+                    showMessage('❌ You must subscribe to the channel!', 'error');
                     setButtonsEnabled(false);
                     return null;
                 }
 
                 const mskDate = getMskDate();
                 if (!mskDate) {
-                    showMessage('❌ Нет данных о времени', 'error');
+                    showMessage('❌ No internet time available', 'error');
                     return null;
                 }
 
@@ -480,7 +470,7 @@
                 const allowedChars = DailyCharSets[wday] || [];
                 
                 if (allowedChars.length === 0) {
-                    showMessage(`❌ Нет символов для дня ${wday}`, 'error');
+                    showMessage(`❌ No chars for day ${wday}`, 'error');
                     return null;
                 }
 
@@ -504,9 +494,9 @@
                 currentKey = key;
                 setKeyDisplay(true, key);
                 setButtonsEnabled(true);
-                showMessage('✅ Ключ готов!', 'success');
+                showMessage('✅ Key ready!', 'success');
                 setTimeout(() => { 
-                    if (messageEl.textContent === '✅ Ключ готов!') {
+                    if (messageEl.textContent === '✅ Key ready!') {
                         messageEl.textContent = '';
                         messageEl.className = 'message';
                     }
@@ -522,7 +512,7 @@
                 if (navigator.clipboard?.writeText) {
                     navigator.clipboard.writeText(text)
                         .then(() => {
-                            showMessage('📋 Скопировано!', 'success');
+                            showMessage('📋 Copied!', 'success');
                             if (tg) tg.HapticFeedback?.notificationOccurred('success');
                         })
                         .catch(() => fallbackCopy(text));
@@ -531,6 +521,7 @@
                 }
             }
 
+            // Translated Russian strings in window prompts/fallbacks
             function fallbackCopy(text) {
                 const ta = document.createElement('textarea');
                 ta.value = text;
@@ -541,71 +532,36 @@
                 ta.select();
                 try {
                     document.execCommand('copy');
-                    showMessage('📋 Скопировано!', 'success');
+                    showMessage('📋 Copied!', 'success');
                 } catch (_) {
-                    showMessage('❌ Не удалось скопировать', 'error');
+                    showMessage('❌ Failed to copy', 'error');
                 }
                 document.body.removeChild(ta);
             }
 
-            // ===== ОБНОВЛЕНИЕ СОСТОЯНИЯ ПОДПИСКИ =====
-            async function updateSubscriptionStatus(showFeedback = true) {
-                if (!userId) {
-                    showMessage('❌ Пользователь не найден', 'error');
-                    return false;
-                }
+            // Perform Subscription Verification Process
+            async function performSubscriptionCheck(userId) {
+                showMessage('⏳ Checking subscription...', 'info');
+                isSubscribed = await checkTelegramSubscription(userId);
 
-                isChecking = true;
-                checkSubBtn.disabled = true;
-                if (showFeedback) {
-                    checkSubBtn.textContent = '⏳ Проверка...';
-                }
-
-                try {
-                    const newStatus = await checkTelegramSubscription(userId);
-                    
-                    if (newStatus !== isSubscribed) {
-                        isSubscribed = newStatus;
-                        if (isSubscribed) {
-                            subBtn.style.display = 'none';
-                            showMessage('✅ Вы подписаны на канал!', 'success');
-                            // Генерируем ключ, если ещё не синхронизировались
-                            if (!syncComplete) {
-                                await syncTime();
-                            }
-                            if (syncComplete && internetTimestamp) {
-                                const date = new Date(internetTimestamp * 1000);
-                                const lastDayChecked = `${date.getUTCDate()}.${date.getUTCMonth() + 1}.${date.getUTCFullYear()}`;
-                                generateKey();
-                            }
-                        } else {
-                            subBtn.style.display = 'block';
-                            setKeyDisplay(false, '🔒 Доступ ограничен', true);
-                            setButtonsEnabled(false);
-                            showMessage('❌ Вы не подписаны на канал.', 'error');
-                        }
-                    } else {
-                        if (isSubscribed) {
-                            showMessage('✅ Подписка подтверждена', 'success');
-                            // Если подписан, но ключа нет — генерируем
-                            if (!currentKey && syncComplete) {
-                                generateKey();
-                            }
-                        } else {
-                            showMessage('❌ Вы не подписаны на канал.', 'error');
-                            subBtn.style.display = 'block';
-                        }
+                if (!isSubscribed) {
+                    setKeyDisplay(false, '🔒 Access Denied', true);
+                    showMessage('❌ Subscription not found. Please join the channel first.', 'error');
+                    subBtn.style.display = 'block';
+                    checkBtn.style.display = 'block';
+                    setButtonsEnabled(false);
+                } else {
+                    subBtn.style.display = 'none';
+                    checkBtn.style.display = 'none';
+                    if (!syncComplete) {
+                        await syncTime();
                     }
-                } catch (e) {
-                    showMessage('❌ Ошибка проверки подписки', 'error');
-                    console.error(e);
-                } finally {
-                    isChecking = false;
-                    checkSubBtn.disabled = false;
-                    checkSubBtn.textContent = '🔍 Проверить подписку';
+                    if (syncComplete && internetTimestamp) {
+                        const date = new Date(internetTimestamp * 1000);
+                        lastDayChecked = `${date.getUTCDate()}.${date.getUTCMonth() + 1}.${date.getUTCFullYear()}`;
+                        generateKey();
+                    }
                 }
-
-                return isSubscribed;
             }
 
             // ===== EVENT LISTENERS =====
@@ -614,7 +570,7 @@
             });
 
             keyBox.addEventListener('click', () => {
-                if (currentKey && syncComplete && isSubscribed) {
+                if (currentKey && syncComplete) {
                     copyToClipboard(currentKey);
                 }
             });
@@ -627,7 +583,7 @@
                 }
             });
 
-            // Клик по кнопке «Подписаться»
+            // Join Channel Button Handler
             subBtn.addEventListener('click', () => {
                 if (tg) {
                     tg.openTelegramLink(CHANNEL_URL);
@@ -636,9 +592,12 @@
                 }
             });
 
-            // Клик по кнопке «Проверить подписку»
-            checkSubBtn.addEventListener('click', () => {
-                updateSubscriptionStatus(true);
+            // Manual Check Button Handler
+            checkBtn.addEventListener('click', async () => {
+                const userId = tg?.initDataUnsafe?.user?.id;
+                if (userId) {
+                    await performSubscriptionCheck(userId);
+                }
             });
 
             // ===== CHECK DAY CHANGE =====
@@ -660,42 +619,25 @@
             async function init() {
                 setButtonsEnabled(false);
                 subBtn.style.display = 'none';
-                setKeyDisplay(false, '⏳ Проверка подписки...', true);
+                checkBtn.style.display = 'none';
+                setKeyDisplay(false, '⏳ Checking subscription...', true);
 
-                userId = tg?.initDataUnsafe?.user?.id;
+                const userId = tg?.initDataUnsafe?.user?.id;
 
                 if (!userId) {
-                    setKeyDisplay(false, '❌ Откройте в Telegram', true);
-                    showMessage('❌ Откройте приложение внутри Telegram.', 'error');
+                    setKeyDisplay(false, '❌ Open in Telegram', true);
+                    showMessage('❌ Please open this WebApp inside Telegram.', 'error');
                     return;
                 }
 
-                // Первая проверка подписки без отображения сообщения
-                isSubscribed = await checkTelegramSubscription(userId);
-
-                if (!isSubscribed) {
-                    setKeyDisplay(false, '🔒 Доступ ограничен', true);
-                    showMessage('❌ Для получения ключа подпишитесь на канал.', 'error');
-                    subBtn.style.display = 'block';
-                    return;
-                }
-
-                // Если подписан — прячем кнопку подписки и генерируем ключ
-                subBtn.style.display = 'none';
-                await syncTime();
-
-                if (syncComplete && internetTimestamp) {
-                    const date = new Date(internetTimestamp * 1000);
-                    lastDayChecked = `${date.getUTCDate()}.${date.getUTCMonth() + 1}.${date.getUTCFullYear()}`;
-                    generateKey();
-                }
+                await performSubscriptionCheck(userId);
 
                 setInterval(checkDayChange, 10000);
 
-                // Проверка подписки при возвращении в приложение
+                // Auto re-check on app focus
                 document.addEventListener('visibilitychange', async () => {
-                    if (!document.hidden) {
-                        await updateSubscriptionStatus(false);
+                    if (!document.hidden && !isSubscribed) {
+                        await performSubscriptionCheck(userId);
                     }
                 });
             }
